@@ -175,6 +175,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * Node with null item.  Both head and tail are only updated using
      * CAS, so they never regress, although again this is merely an
      * optimization.
+     *
+     * Node节点， 值保存Next
      */
 
     private static class Node<E> {
@@ -184,6 +186,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         /**
          * Constructs a new node.  Uses relaxed write because item can
          * only be seen after publication via casNext.
+         * 使用CAS无锁创建 Node。。。
+         *
          */
         Node(E item) {
             UNSAFE.putObject(this, itemOffset, item);
@@ -192,8 +196,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         boolean casItem(E cmp, E val) {
             return UNSAFE.compareAndSwapObject(this, itemOffset, cmp, val);
         }
-
+        // 传入的Head节点
         void lazySetNext(Node<E> val) {
+            //                      this  下一个节点  值
             UNSAFE.putOrderedObject(this, nextOffset, val);
         }
 
@@ -222,6 +227,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 头节点
      * A node from which the first live (non-deleted) node (if any)
      * can be reached in O(1) time.
      * Invariants:
@@ -236,6 +242,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     private transient volatile Node<E> head;
 
     /**
+     * 尾节点
      * A node from which the last node on list (that is, the unique
      * node with node.next == null) can be reached in O(1) time.
      * Invariants:
@@ -250,6 +257,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     private transient volatile Node<E> tail;
 
     /**
+     * 构造方法，  头节点 == 尾节点 == 元素为空的Node
      * Creates a {@code ConcurrentLinkedQueue} that is initially empty.
      */
     public ConcurrentLinkedQueue() {
@@ -257,6 +265,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 使用现用集合初始化Queue
      * Creates a {@code ConcurrentLinkedQueue}
      * initially containing the elements of the given collection,
      * added in traversal order of the collection's iterator.
@@ -286,6 +295,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     // Have to override just to update the javadoc
 
     /**
+     * 添加一个元素
      * Inserts the specified element at the tail of this queue.
      * As the queue is unbounded, this method will never throw
      * {@link IllegalStateException} or return {@code false}.
@@ -298,12 +308,17 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 尝试CAS head 到p。 如果成功，请将旧头重新指定为succ（）的哨兵。
+     * 疑问：这儿为什么要传 head节点？
+     * todo
      * Tries to CAS head to p. If successful, repoint old head to itself
      * as sentinel for succ(), below.
      */
     final void updateHead(Node<E> h, Node<E> p) {
+        // 当head != p 且 CAS 替换 head成功
         if (h != p && casHead(h, p))
-            h.lazySetNext(h);
+            h.lazySetNext(h);  // ??   todo
+        // todo 不知道为撒这样做
     }
 
     /**
@@ -313,10 +328,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      */
     final Node<E> succ(Node<E> p) {
         Node<E> next = p.next;
+        // 如果 p节点 == p的next节点，  则返回head节点，否则返回next节点
         return (p == next) ? head : next;
     }
 
     /**
+     * 插入一个元素到队列尾部
      * Inserts the specified element at the tail of this queue.
      * As the queue is unbounded, this method will never return {@code false}.
      *
@@ -324,45 +341,65 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
+        // 判断是否为NUll
         checkNotNull(e);
+        // 创建新node
         final Node<E> newNode = new Node<E>(e);
-
-        for (Node<E> t = tail, p = t;;) {
+        // t= 尾节点
+        for (Node<E> t = tail, p = t;;) {  // 相当于一个大的CAS操作
+            // q = p的next节点。 正常应该为空吧
             Node<E> q = p.next;
             if (q == null) {
+                // 如果为空，那么 t就是last节点
                 // p is last node
+                // 设置下一个节点
                 if (p.casNext(null, newNode)) {
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
                     // and for newNode to become "live".
+                    // p 不等于尾节点，就进行CAS替换
                     if (p != t) // hop two nodes at a time
+                        // 设置尾节点
                         casTail(t, newNode);  // Failure is OK.
+                    //
                     return true;
                 }
                 // Lost CAS race to another thread; re-read next
             }
+            // 尾节点和 他的下一个节点相等 ？？  todo ，是一种异常情况吧
             else if (p == q)
                 // We have fallen off list.  If tail is unchanged, it
                 // will also be off-list, in which case we need to
                 // jump to head, from which all live nodes are always
                 // reachable.  Else the new tail is a better bet.
                 p = (t != (t = tail)) ? t : head;
+            // 取到尾节点。这种情况是，在判断的时候，尾节点的next被人改了，但是tail还去没更改引用。
             else
                 // Check for tail updates after two hops.
-                p = (p != t && t != (t = tail)) ? t : q;
+                    // p != t 这是为了做撒？    t != (t = tail)  是为了取到尾节点，如果 t等于尾节点，那么 说明宁一个线程只是替换了尾节点的next，tail还没执行到那一步。
+            //        p不等于 t   &&  t != 尾节点
+                p = (p != t && t != (t = tail)) ? t /**这儿的t是尾节点**/ : q;
         }
     }
 
+    /**
+     *  取出一个数据
+     * @return
+     */
     public E poll() {
         restartFromHead:
-        for (;;) {
+        for (;;) { // 死循环
+            // 取出 头节点
             for (Node<E> h = head, p = h, q;;) {
+                // 保存当前节点的值
                 E item = p.item;
-
+                //
                 if (item != null && p.casItem(item, null)) {
                     // Successful CAS is the linearization point
                     // for item to be removed from this queue.
+                    // 二次判断是否CAS成功？
                     if (p != h) // hop two nodes at a time
+                        // 修改head   如果下一个节点为空，那么久吧下一个节点也执行old head
                         updateHead(h, ((q = p.next) != null) ? q : p);
                     return item;
                 }
@@ -924,6 +961,13 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         return UNSAFE.compareAndSwapObject(this, tailOffset, cmp, val);
     }
 
+    /**
+     * CAS 替换 ，当 偏移量的object == cmp时，替换cmp为val
+     * headOffset 为 头节点偏移
+     * @param cmp
+     * @param val
+     * @return
+     */
     private boolean casHead(Node<E> cmp, Node<E> val) {
         return UNSAFE.compareAndSwapObject(this, headOffset, cmp, val);
     }

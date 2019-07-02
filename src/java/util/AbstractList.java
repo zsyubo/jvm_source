@@ -598,6 +598,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * does not wish to provide fail-fast iterators, this field may be
      * ignored.
      */
+    //      在父类AbstractList中定义了一个int型的属性：modCount，记录了ArrayList结构性变化的次数。
     protected transient int modCount = 0;
 
     private void rangeCheckForAdd(int index) {
