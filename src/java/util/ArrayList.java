@@ -319,7 +319,7 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * Returns <tt>true</tt> if this list contains no elements.
-     *
+     * 判断是否为空
      * @return <tt>true</tt> if this list contains no elements
      */
     public boolean isEmpty() {
@@ -458,6 +458,7 @@ public class ArrayList<E> extends AbstractList<E>
 
     @SuppressWarnings("unchecked")
     E elementData(int index) {
+        // 下标取数据
         return (E) elementData[index];
     }
 
@@ -470,7 +471,7 @@ public class ArrayList<E> extends AbstractList<E>
      * 获取数据，通过下标
      */
     public E get(int index) {
-        // 检查下标
+        // 检查下标是否越界
         rangeCheck(index);
         //
         return elementData(index);
@@ -479,13 +480,14 @@ public class ArrayList<E> extends AbstractList<E>
     /**
      * Replaces the element at the specified position in this list with
      * the specified element.
-     *
+     *  替换
      * @param index index of the element to replace
      * @param element element to be stored at the specified position
      * @return the element previously at the specified position
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E set(int index, E element) {
+        // 下标越界检查
         rangeCheck(index);
 
         E oldValue = elementData(index);
@@ -516,9 +518,11 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
+        // 添加下标越界检查
         rangeCheckForAdd(index);
-
+        // 容量检查
         ensureCapacityInternal(size + 1);  // Increments modCount!!
+        // 这个就是移动数组数据，这里add可以在数组中间插入数据
         System.arraycopy(elementData, index, elementData, index + 1,
                          size - index);
         elementData[index] = element;
@@ -529,7 +533,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Removes the element at the specified position in this list.
      * Shifts any subsequent elements to the left (subtracts one from their
      * indices).
-     *
+     *  传入下标remove
      * @param index the index of the element to be removed
      * @return the element that was removed from the list
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -539,7 +543,7 @@ public class ArrayList<E> extends AbstractList<E>
 
         modCount++;
         E oldValue = elementData(index);
-
+        // 判断是是否需要 移动数据
         int numMoved = size - index - 1;
         if (numMoved > 0)
             System.arraycopy(elementData, index+1, elementData, index,
@@ -558,7 +562,7 @@ public class ArrayList<E> extends AbstractList<E>
      * (if such an element exists).  Returns <tt>true</tt> if this list
      * contained the specified element (or equivalently, if this list
      * changed as a result of the call).
-     *
+     *  传入对象remove。可以穿null
      * @param o element to be removed from this list, if present
      * @return <tt>true</tt> if this list contained the specified element
      */
@@ -580,6 +584,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /*
+        快速删除
      * Private remove method that skips bounds checking and does not
      * return the value removed.
      */
@@ -595,6 +600,7 @@ public class ArrayList<E> extends AbstractList<E>
     /**
      * Removes all of the elements from this list.  The list will
      * be empty after this call returns.
+     * 清空，但是不缩容
      */
     public void clear() {
         modCount++;
