@@ -236,12 +236,13 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * 就判断下  底层数组是不是空
+     * 就判断下  底层数组是不是空，如果底层数组为空，同时第一次插入数据，则返回默认长度
      * @param elementData
      * @param minCapacity
      * @return
      */
     private static int calculateCapacity(Object[] elementData, int minCapacity) {
+        // 如果底层数组为空，这去判断 传入的 数组长度 与默认长度谁大
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             return Math.max(DEFAULT_CAPACITY, minCapacity);
         }
@@ -301,7 +302,7 @@ public class ArrayList<E> extends AbstractList<E>
         // 如果传入小于0， 抛出
         if (minCapacity < 0) // overflow
             throw new OutOfMemoryError();
-        // 如果传入长度大于 最大长度，则返回  int maxm,  小于则返回MAX_ARRAY_SIZE
+        // 防止int类型溢出。如果传入长度大于 最大长度，则返回  int maxm,  小于则返回MAX_ARRAY_SIZE
         return (minCapacity > MAX_ARRAY_SIZE) ?
             Integer.MAX_VALUE :
             MAX_ARRAY_SIZE;
@@ -344,7 +345,7 @@ public class ArrayList<E> extends AbstractList<E>
      * More formally, returns the lowest index <tt>i</tt> such that
      * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
      * or -1 if there is no such index.
-     * 传入 数据取下标， 没有返回-1；
+     * 传入 数据取下标， 没有返回-1；  反正就是迭代遍历
      * 可以传入null
      */
     public int indexOf(Object o) {
@@ -466,10 +467,12 @@ public class ArrayList<E> extends AbstractList<E>
      * @param  index index of the element to return
      * @return the element at the specified position in this list
      * @throws IndexOutOfBoundsException {@inheritDoc}
+     * 获取数据，通过下标
      */
     public E get(int index) {
+        // 检查下标
         rangeCheck(index);
-
+        //
         return elementData(index);
     }
 
@@ -690,6 +693,7 @@ public class ArrayList<E> extends AbstractList<E>
      * runtime exception.  This method does *not* check if the index is
      * negative: It is always used immediately prior to an array access,
      * which throws an ArrayIndexOutOfBoundsException if index is negative.
+     * 校验下标是否溢出，不过居然没没校验小于0
      */
     private void rangeCheck(int index) {
         if (index >= size)

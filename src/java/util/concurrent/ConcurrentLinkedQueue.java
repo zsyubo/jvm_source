@@ -343,11 +343,11 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     public boolean offer(E e) {
         // 判断是否为NUll
         checkNotNull(e);
-        // 创建新node
+        // 创建新node  ，底层使用  UNSAFE.putObject(
         final Node<E> newNode = new Node<E>(e);
-        // t= 尾节点
+        // t= 尾节点   从尾节点进行插入
         for (Node<E> t = tail, p = t;;) {  // 相当于一个大的CAS操作
-            // q = p的next节点。 正常应该为空吧
+            // q = p的next节点。 正常应该为空吧   如果不为空，那么只可能 当前tail节点 被人设置next了，但是tail还没开始修改
             Node<E> q = p.next;
             if (q == null) {
                 // 如果为空，那么 t就是last节点
@@ -366,6 +366,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                 }
                 // Lost CAS race to another thread; re-read next
             }
+            //
             // 尾节点和 他的下一个节点相等 ？？  todo ，是一种异常情况吧
             else if (p == q)
                 // We have fallen off list.  If tail is unchanged, it
