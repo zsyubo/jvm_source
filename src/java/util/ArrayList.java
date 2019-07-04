@@ -672,7 +672,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Shifts any succeeding elements to the left (reduces their index).
      * This call shortens the list by {@code (toIndex - fromIndex)} elements.
      * (If {@code toIndex==fromIndex}, this operation has no effect.)
-     *
+     * 给一个下标范围，清空里面的数据
      * @throws IndexOutOfBoundsException if {@code fromIndex} or
      *         {@code toIndex} is out of range
      *         ({@code fromIndex < 0 ||
@@ -681,12 +681,16 @@ public class ArrayList<E> extends AbstractList<E>
      *          toIndex < fromIndex})
      */
     protected void removeRange(int fromIndex, int toIndex) {
+        // 操作数
         modCount++;
+        // 移动的数据个数
         int numMoved = size - toIndex;
+        // 通过arrayCopy来操作数组
         System.arraycopy(elementData, toIndex, elementData, fromIndex,
                          numMoved);
 
         // clear to let GC do its work
+        // 从newSize 开始，清空后面的数组元素
         int newSize = size - (toIndex-fromIndex);
         for (int i = newSize; i < size; i++) {
             elementData[i] = null;
@@ -708,6 +712,7 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * A version of rangeCheck used by add and addAll.
+     * 添加校验
      */
     private void rangeCheckForAdd(int index) {
         if (index > size || index < 0)
@@ -747,7 +752,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Retains only the elements in this list that are contained in the
      * specified collection.  In other words, removes from this list all
      * of its elements that are not contained in the specified collection.
-     *
+     *  数组仅保留  集合中存在的元素
      * @param c collection containing elements to be retained in this list
      * @return {@code true} if this list changed as a result of the call
      * @throws ClassCastException if the class of an element of this list
@@ -770,6 +775,8 @@ public class ArrayList<E> extends AbstractList<E>
         boolean modified = false;
         try {
             for (; r < size; r++)
+                // 如果存在元素，就从第一个往后依次覆盖  true
+                // 如果不是在传入集合中的元素，就从第一个往后依次覆盖
                 if (c.contains(elementData[r]) == complement)
                     elementData[w++] = elementData[r];
         } finally {
@@ -855,7 +862,7 @@ public class ArrayList<E> extends AbstractList<E>
      * returned by an initial call to {@link ListIterator#next next}.
      * An initial call to {@link ListIterator#previous previous} would
      * return the element with the specified index minus one.
-     *
+     *  迭代器
      * <p>The returned list iterator is <a href="#fail-fast"><i>fail-fast</i></a>.
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -1508,7 +1515,9 @@ public class ArrayList<E> extends AbstractList<E>
     @SuppressWarnings("unchecked")
     public void sort(Comparator<? super E> c) {
         final int expectedModCount = modCount;
+        // 底层使用快排 双轴快排的算法
         Arrays.sort((E[]) elementData, 0, size, c);
+        // 此处判断 在排序过程中，数组元素是否被修改了
         if (modCount != expectedModCount) {
             throw new ConcurrentModificationException();
         }
