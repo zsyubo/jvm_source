@@ -565,13 +565,14 @@ public class LinkedList<E>
      */
     Node<E> node(int index) {
         // assert isElementIndex(index);
-
+            // 如果数据位于 前半部分
         if (index < (size >> 1)) {
             Node<E> x = first;
             for (int i = 0; i < index; i++)
                 x = x.next;
             return x;
         } else {
+            // 如果数据位于 后半部分
             Node<E> x = last;
             for (int i = size - 1; i > index; i--)
                 x = x.prev;
