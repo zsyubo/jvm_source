@@ -645,22 +645,32 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         // 如果table 为空，或者 table 的length等于0 ，那么就是这个table没被初始化。
         if ((tab = table) == null || (n = tab.length) == 0)
-            // n为扩容后的长度
+            // n为扩容后的长度,初始化一个table
             n = (tab = resize()).length;
+        // i = 元素在数组中存储的为知
+        // p  = 位置的值。  i = (n - 1) & hash 这段就是在求余，优化计算速度。
         if ((p = tab[i = (n - 1) & hash]) == null)
+            // 位置上没有东西，创建节点存放元素
             tab[i] = newNode(hash, key, value, null);
+        // else  如果位置上有元素
         else {
             Node<K,V> e; K k;
+            // hash 相同
             if (p.hash == hash &&
+                    //值相同 或者   key.equals 、、、也就是完全相等，那么久覆盖。
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 e = p;
+            // 如果是 数，红黑树方式
             else if (p instanceof TreeNode)
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
             else {
+                // 链表插入元素，循环遍历
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
                         p.next = newNode(hash, key, value, null);
+                        //如果当前链表数量大于数据结构的阈值
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            // 链表转红黑树
                             treeifyBin(tab, hash);
                         break;
                     }
@@ -670,6 +680,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     p = e;
                 }
             }
+            // 覆盖老值
             if (e != null) { // existing mapping for key
                 V oldValue = e.value;
                 if (!onlyIfAbsent || oldValue == null)
@@ -679,7 +690,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         ++modCount;
+        // 判断当前数组大小是否大于阈值
         if (++size > threshold)
+            // 扩容
             resize();
         afterNodeInsertion(evict);
         return null;
@@ -695,23 +708,34 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return the table
      */
     final Node<K,V>[] resize() {
+        // 数组初始值
         Node<K,V>[] oldTab = table;
+        // 扩容前的变量初始化
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        // 扩容阈值
         int oldThr = threshold;
+        // 扩容后的变量初始化
         int newCap, newThr = 0;
+        // 如果 数组非空
         if (oldCap > 0) {
+            // 判断是否超过最大容量
             if (oldCap >= MAXIMUM_CAPACITY) {
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
+            // 小于最大容量，大于等于初始容量(16)
             else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
+                //  double  旧容量*2；
                 newThr = oldThr << 1; // double threshold
         }
+        // 大于0，也就是小于 初始容量，  感觉不做任何操作
         else if (oldThr > 0) // initial capacity was placed in threshold
             newCap = oldThr;
         else {               // zero initial threshold signifies using defaults
+           // newCap 等于 阈值
             newCap = DEFAULT_INITIAL_CAPACITY;
+            // 初始阈值 * 负载因子
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
         }
         if (newThr == 0) {
@@ -721,8 +745,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
         threshold = newThr;
         @SuppressWarnings({"rawtypes","unchecked"})
+                //初始化新table
             Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
         table = newTab;
+        // 准备对元素进行定位
         if (oldTab != null) {
             for (int j = 0; j < oldCap; ++j) {
                 Node<K,V> e;
@@ -765,6 +791,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 }
             }
         }
+        // 返回新tebale
         return newTab;
     }
 
@@ -774,6 +801,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final void treeifyBin(Node<K,V>[] tab, int hash) {
         int n, index; Node<K,V> e;
+        // 如果 当前数组长度小于 MIN_TREEIFY_CAPACITY，则进行扩容，不转树。
         if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
             resize();
         else if ((e = tab[index = (n - 1) & hash]) != null) {
